@@ -10,33 +10,39 @@ local LocalPlayer = Players.LocalPlayer
 local espEnabled = true
 local highlights = {}
 
-function createESP(player)
-    if player == LocalPlayer then return end
+function applyESP(player, char)
     if highlights[player] then highlights[player]:Destroy() end
     local highlight = Instance.new("Highlight")
     highlight.OutlineColor = outlineColor
     highlight.FillColor = fillColor
     highlight.FillTransparency = 0.5
     highlight.OutlineTransparency = 0
-    highlight.Parent = player.Character
+    highlight.Enabled = espEnabled
+    highlight.Parent = char
     highlights[player] = highlight
+end
+
+function setupPlayer(player)
+    if player == LocalPlayer then return end
+    if player.Character then
+        applyESP(player, player.Character)
+    end
     player.CharacterAdded:Connect(function(char)
-        local newHighlight = highlight:Clone()
-        newHighlight.Parent = char
-        highlights[player] = newHighlight
+        char:WaitForChild("HumanoidRootPart", 5)
+        applyESP(player, char)
     end)
 end
 
 for _, p in pairs(Players:GetPlayers()) do
-    if p.Character then
-        createESP(p)
-    end
+    setupPlayer(p)
 end
 
-Players.PlayerAdded:Connect(function(p)
-    p.CharacterAdded:Connect(function()
-        createESP(p)
-    end)
+Players.PlayerAdded:Connect(setupPlayer)
+Players.PlayerRemoving:Connect(function(p)
+    if highlights[p] then
+        highlights[p]:Destroy()
+        highlights[p] = nil
+    end
 end)
 
 UserInputService.InputBegan:Connect(function(input, gpe)
